@@ -1,6 +1,4 @@
 // Package tryhttp reschedule failed HTTP requests.
-//
-// TODO: document more.
 package tryhttp
 
 import (
@@ -18,7 +16,7 @@ type Client struct {
 	// Retry determines if we should retry the request after failure. It will
 	// keep retrying until the second argument returns false. The first return
 	// argument can be used to delay the HTTP request.
-	Retry func(r *http.Request, attempt int) (delay time.Duration, retry bool)
+	Retry func(r *http.Request, err error, attempt int) (delay time.Duration, retry bool)
 
 	// Success callback. This will be run after the HTTP request is finished
 	// without errors or a non-2xx status code.
@@ -44,6 +42,17 @@ var (
 	// DefaultClient is a HTTP client with a timeout of 10 seconds.
 	DefaultClient = &http.Client{Timeout: 10 * time.Second}
 )
+
+// ErrorNotOkay is used when a HTTP request succeeded (e.g. not connection
+// error) but did not return a 2xx status code.
+type ErrorNotOkay struct {
+	Status int    // HTTP status code.
+	Body   string // First 300 characters of body.
+}
+
+func (err *ErrorNotOkay) Error() string {
+	return fmt.Sprintf("status %v: %v", err.Status, err.Body)
+}
 
 // New creates a new Request object, ensuring that all blank fields are given
 // sane defaults.
@@ -72,8 +81,7 @@ func (c Client) do(r *http.Request, attempt int) {
 	// Consider non-200 status code to be errors; this won't set err.
 	if err == nil && (resp.StatusCode < 200 || resp.StatusCode > 299) {
 		b, _ := ioutil.ReadAll(resp.Body)
-		err = fmt.Errorf("status %v: %v", resp.StatusCode,
-			stringutil.Left(string(b), 200))
+		err = &ErrorNotOkay{Status: resp.StatusCode, Body: stringutil.Left(string(b), 300)}
 	}
 
 	if err == nil {
@@ -89,7 +97,7 @@ func (c Client) do(r *http.Request, attempt int) {
 		resp.Body.Close() // nolint: errcheck
 	}
 
-	delay, retry := c.Retry(r, attempt)
+	delay, retry := c.Retry(r, err, attempt)
 	if !retry {
 		return
 	}

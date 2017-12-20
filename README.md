@@ -13,25 +13,27 @@ RabbitMQ or Redis).
 
 A simple example:
 
-    r := tryhttp.New(tryhttp.Client{
-        // Determine if we should retry.
-        Retry: func(r *http.Request, n int) (delay time.Duration, retry bool) {
-            retry = n < 6
-            if !retry {
-                log.Print("Aborting request to %s", r.URL)
-            }
-            return time.Second*10, retry
+```go
+r := tryhttp.New(tryhttp.Client{
+    // Determine if we should retry.
+    Retry: func(r *http.Request, n int) (delay time.Duration, retry bool) {
+        retry = n < 6
+        if !retry {
+            log.Print("Aborting request to %s", r.URL)
         }
+        return time.Second*10, retry
+    }
 
-        // Schedule failed messages with this.
-        Schedule: tryhttp.ScheduleGoRoutine
-    })
+    // Schedule failed messages with this.
+    Schedule: tryhttp.ScheduleGoRoutine
+})
 
-	req, err := http.NewRequest("GET", "http://example.com", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-    r.Do(req)
+req, err := http.NewRequest("GET", "http://example.com", nil)
+if err != nil {
+    log.Fatal(err)
+}
+r.Do(req)
+```
 
 Why not just use goroutines?
 ----------------------------

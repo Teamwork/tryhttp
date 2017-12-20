@@ -7,15 +7,9 @@
   packages = ["stringutil"]
   revision = "d3111ff1ba4d68d5128cc2f3b6cfee49102aadc9"
 
-[[projects]]
-  branch = "master"
-  name = "github.com/tevino/abool"
-  packages = ["."]
-  revision = "9b9efcf221b50905aab9bbabd3daed56dc10f339"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4b8a2cddd8b08849b0e25f2189fe37d7ed6ae08139c19b58f2e1331ad0538e5a"
+  inputs-digest = "ab99f1881af4f5081e61bdbf0159e32a9a306254207f1a9e73136787344ae5c8"
   solver-name = "gps-cdcl"
   solver-version = 1

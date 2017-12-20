@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/tevino/abool"
 )
 
 func Test(t *testing.T) {
@@ -22,13 +21,14 @@ func Test(t *testing.T) {
 		w.Write([]byte("hello")) // nolint: errcheck
 	}))
 
-	successCalled := abool.New()
+	suc := int32(0)
+	successCalled := &suc
 	h := New(Client{
-		Retry: func(r *http.Request, n int) (time.Duration, bool) {
+		Retry: func(r *http.Request, err error, n int) (time.Duration, bool) {
 			return 200 * time.Millisecond, true
 		},
 		Success: func(r *http.Request, resp *http.Response, attempt int) {
-			successCalled.Set()
+			atomic.StoreInt32(successCalled, 1)
 			resp.Body.Close() // nolint: errcheck
 		},
 	})
@@ -38,12 +38,12 @@ func Test(t *testing.T) {
 	})
 
 	time.Sleep(250 * time.Millisecond)
-	if successCalled.IsSet() {
+	if atomic.LoadInt32((*int32)(successCalled)) == 1 {
 		t.Fatal("successCalled == true too soon!")
 	}
 
 	Goroutines.Wait()
-	if !successCalled.IsSet() {
+	if atomic.LoadInt32((*int32)(successCalled)) != 1 {
 		t.Fatal("successCalled == false")
 	}
 }
