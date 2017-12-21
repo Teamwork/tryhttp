@@ -16,6 +16,9 @@ type Client struct {
 	// Retry determines if we should retry the request after failure. It will
 	// keep retrying until the second argument returns false. The first return
 	// argument can be used to delay the HTTP request.
+	//
+	// The attempt number is passed in the 'attempt' variable. The first attempt
+	// is 1.
 	Retry func(r *http.Request, err error, attempt int) (delay time.Duration, retry bool)
 
 	// Success callback. This will be run after the HTTP request is finished
@@ -72,7 +75,9 @@ func New(c Client) Client {
 // Do performs the HTTP request; if this fails it will be sent for retry to
 // the Qeueue.
 func (c Client) Do(r *http.Request) {
-	c.do(r, 0)
+	// Need to start at 2, since the first attempt is 1, and we do a request
+	// before starting the scheduler.
+	c.do(r, 2)
 }
 
 func (c Client) do(r *http.Request, attempt int) {
