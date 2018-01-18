@@ -16,8 +16,8 @@ A simple example:
 ```go
 r := tryhttp.New(tryhttp.Client{
     // Determine if we should retry.
-    Retry: func(r *http.Request, n int) (delay time.Duration, retry bool) {
-        retry = n < 6
+    Retry: func(r *http.Request, err error, attempt int) (delay time.Duration, retry bool) {
+        retry = attempt < 2
         if !retry {
             log.Print("Aborting request to %s", r.URL)
         }
@@ -25,7 +25,7 @@ r := tryhttp.New(tryhttp.Client{
     }
 
     // Schedule failed messages with this.
-    Schedule: tryhttp.ScheduleGoRoutine
+    Scheduler: tryhttp.ScheduleGoroutine,
 })
 
 req, err := http.NewRequest("GET", "http://example.com", nil)
